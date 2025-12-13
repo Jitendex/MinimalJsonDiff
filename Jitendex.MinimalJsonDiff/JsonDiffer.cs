@@ -33,29 +33,29 @@ public static class JsonDiffer
     {
         var nodeA = JsonSerializer.SerializeToNode(a);
         var nodeB = JsonSerializer.SerializeToNode(b);
-        var patch = new JsonPatchDocument();
-        NodeDiff(nodeA, nodeB, patch, path: string.Empty);
-        return JsonSerializer.Serialize(patch, SerializerOptions);
+        var document = new JsonPatchDocument();
+        NodeDiff(nodeA, nodeB, document, path: string.Empty);
+        return JsonSerializer.Serialize(document, SerializerOptions);
     }
 
-    private static void NodeDiff(JsonNode? a, JsonNode? b, JsonPatchDocument patch, string path)
+    private static void NodeDiff(JsonNode? a, JsonNode? b, JsonPatchDocument document, string path)
     {
         if (a is JsonObject objA && b is JsonObject objB)
         {
-            ObjectDiff(objA, objB, patch, path);
+            ObjectDiff(objA, objB, document, path);
         }
         else if (a is JsonArray arrA && b is JsonArray arrB)
         {
-            ArrayDiff(arrA, arrB, patch, path);
+            ArrayDiff(arrA, arrB, document, path);
         }
         else if (!JsonNode.DeepEquals(a, b))
         {
-            patch.Test(path, a);
-            patch.Replace(path, b);
+            document.Test(path, a);
+            document.Replace(path, b);
         }
     }
 
-    private static void ObjectDiff(JsonObject a, JsonObject b, JsonPatchDocument patch, string path)
+    private static void ObjectDiff(JsonObject a, JsonObject b, JsonPatchDocument document, string path)
     {
         static string Join(string path, string key) => $"{path}/{key}";
 
@@ -64,12 +64,12 @@ public static class JsonDiffer
             var keyPath = Join(path, key);
             if (b.TryGetPropertyValue(key, out var nodeB))
             {
-                NodeDiff(nodeA, nodeB, patch, keyPath);
+                NodeDiff(nodeA, nodeB, document, keyPath);
             }
             else
             {
-                patch.Test(keyPath, nodeA);
-                patch.Remove(keyPath);
+                document.Test(keyPath, nodeA);
+                document.Remove(keyPath);
             }
         }
 
@@ -77,19 +77,19 @@ public static class JsonDiffer
         {
             if (!a.ContainsKey(key))
             {
-                patch.Add(Join(path, key), nodeB);
+                document.Add(Join(path, key), nodeB);
             }
         }
     }
 
-    private static void ArrayDiff(JsonArray a, JsonArray b, JsonPatchDocument patch, string path)
+    private static void ArrayDiff(JsonArray a, JsonArray b, JsonPatchDocument document, string path)
     {
         static string Join(string path, int i) => $"{path}/{i}";
 
         if (a.Count == 0 ^ b.Count == 0)
         {
-            patch.Test(path, a);
-            patch.Replace(path, b);
+            document.Test(path, a);
+            document.Replace(path, b);
         }
         else if (a.Count <= b.Count)
         {
@@ -98,11 +98,11 @@ public static class JsonDiffer
                 var indexPath = Join(path, i);
                 if (i < a.Count)
                 {
-                    NodeDiff(a[i], b[i], patch, indexPath);
+                    NodeDiff(a[i], b[i], document, indexPath);
                 }
                 else
                 {
-                    patch.Add(indexPath, b[i]);
+                    document.Add(indexPath, b[i]);
                 }
             }
         }
@@ -113,12 +113,12 @@ public static class JsonDiffer
                 var indexPath = Join(path, i);
                 if (i < b.Count)
                 {
-                    NodeDiff(a[i], b[i], patch, indexPath);
+                    NodeDiff(a[i], b[i], document, indexPath);
                 }
                 else
                 {
-                    patch.Test(indexPath, a[i]);
-                    patch.Remove(indexPath);
+                    document.Test(indexPath, a[i]);
+                    document.Remove(indexPath);
                 }
             }
         }
