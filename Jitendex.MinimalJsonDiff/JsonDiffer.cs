@@ -24,14 +24,18 @@ namespace Jitendex.MinimalJsonDiff;
 
 public static class JsonDiffer
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        WriteIndented = true
+    };
+
     public static string Diff<T>(T a, T b) where T : class
     {
-        var options = new JsonSerializerOptions { WriteIndented = true };
         var nodeA = JsonSerializer.SerializeToNode(a);
         var nodeB = JsonSerializer.SerializeToNode(b);
         var patch = new JsonPatchDocument();
         NodeDiff(nodeA, nodeB, patch, path: string.Empty);
-        return JsonSerializer.Serialize(patch, options);
+        return JsonSerializer.Serialize(patch, SerializerOptions);
     }
 
     private static void NodeDiff(JsonNode? a, JsonNode? b, JsonPatchDocument patch, string path)
