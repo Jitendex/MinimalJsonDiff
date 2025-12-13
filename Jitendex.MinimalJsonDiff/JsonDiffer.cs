@@ -86,11 +86,14 @@ public static class JsonDiffer
     {
         static string Join(string path, int i) => $"{path}/{i}";
 
+        // One array is empty, but the other is not empty.
         if (a.Count == 0 ^ b.Count == 0)
         {
             document.Test(path, a);
             document.Replace(path, b);
         }
+
+        // Arrays are equal length, or array B is larger.
         else if (a.Count <= b.Count)
         {
             for (int i = 0; i < b.Count; i++)
@@ -106,8 +109,11 @@ public static class JsonDiffer
                 }
             }
         }
+
+        // Array A is larger than array B.
         else
         {
+            // Loop backwards because Remove operations cause array lengths to shrink.
             for (int i = a.Count - 1; i >= 0; i--)
             {
                 var indexPath = Join(path, i);
