@@ -59,28 +59,25 @@ public static class JsonDiffer
     {
         static string Join(string path, string key) => $"{path}/{key}";
 
-        var aKeys = a.Select(static x => x.Key).ToHashSet();
-        var bKeys = b.Select(static x => x.Key).ToHashSet();
-
-        foreach (var key in aKeys)
+        foreach (var (key, nodeA) in a)
         {
             var keyPath = Join(path, key);
-            if (bKeys.Contains(key))
+            if (b.TryGetPropertyValue(key, out var nodeB))
             {
-                NodeDiff(a[key], b[key], patch, keyPath);
+                NodeDiff(nodeA, nodeB, patch, keyPath);
             }
             else
             {
-                patch.Test(keyPath, a[key]);
+                patch.Test(keyPath, nodeA);
                 patch.Remove(keyPath);
             }
         }
 
-        foreach (var key in bKeys)
+        foreach (var (key, nodeB) in b)
         {
-            if (!aKeys.Contains(key))
+            if (!a.ContainsKey(key))
             {
-                patch.Add(Join(path, key), b[key]);
+                patch.Add(Join(path, key), nodeB);
             }
         }
     }
