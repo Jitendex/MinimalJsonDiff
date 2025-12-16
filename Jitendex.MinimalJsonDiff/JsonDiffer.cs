@@ -33,8 +33,13 @@ public static class JsonDiffer
     {
         var nodeA = JsonSerializer.SerializeToNode(a);
         var nodeB = JsonSerializer.SerializeToNode(b);
+        return Diff(nodeA, nodeB);
+    }
+
+    public static string Diff(JsonNode? a, JsonNode? b)
+    {
         var document = new JsonPatchDocument();
-        NodeDiff(nodeA, nodeB, document, path: string.Empty);
+        NodeDiff(a, b, document, path: string.Empty);
         return JsonSerializer.Serialize(document, SerializerOptions);
     }
 
