@@ -60,13 +60,13 @@ public static class JsonDiffer
         }
     }
 
+    private static string Join<T>(this string path, T key) => $"{path}/{key}";
+
     private static void ObjectDiff(JsonObject a, JsonObject b, JsonPatchDocument document, string path)
     {
-        static string Join(string path, string key) => $"{path}/{key}";
-
         foreach (var (key, nodeA) in a)
         {
-            var keyPath = Join(path, key);
+            var keyPath = path.Join(key);
             if (b.TryGetPropertyValue(key, out var nodeB))
             {
                 NodeDiff(nodeA, nodeB, document, keyPath);
@@ -82,15 +82,13 @@ public static class JsonDiffer
         {
             if (!a.ContainsKey(key))
             {
-                document.Add(Join(path, key), nodeB);
+                document.Add(path.Join(key), nodeB);
             }
         }
     }
 
     private static void ArrayDiff(JsonArray a, JsonArray b, JsonPatchDocument document, string path)
     {
-        static string Join(string path, int i) => $"{path}/{i}";
-
         // One array is empty, but the other is not empty.
         if (a.Count == 0 ^ b.Count == 0)
         {
@@ -103,7 +101,7 @@ public static class JsonDiffer
         {
             for (int i = 0; i < b.Count; i++)
             {
-                var indexPath = Join(path, i);
+                var indexPath = path.Join(i);
                 if (i < a.Count)
                 {
                     NodeDiff(a[i], b[i], document, indexPath);
@@ -121,7 +119,7 @@ public static class JsonDiffer
             // Loop backwards because Remove operations cause array lengths to shrink.
             for (int i = a.Count - 1; i >= 0; i--)
             {
-                var indexPath = Join(path, i);
+                var indexPath = path.Join(i);
                 if (i < b.Count)
                 {
                     NodeDiff(a[i], b[i], document, indexPath);
