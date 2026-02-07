@@ -40,7 +40,11 @@ public static class JsonDiffer
     {
         var document = new JsonPatchDocument();
         NodeDiff(a, b, document, path: string.Empty);
-        return JsonSerializer.Serialize(document, SerializerOptions);
+
+        // JsonPatchDocument serialization is broken in .NET 10
+        // return JsonSerializer.Serialize(document);
+
+        return SerializeDocument(document);
     }
 
     private static void NodeDiff(JsonNode? a, JsonNode? b, JsonPatchDocument document, string path)
@@ -131,5 +135,44 @@ public static class JsonDiffer
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// This method can be removed when JsonPatchDocument serialization is fixed in the dotnet runtime.
+    /// See https://github.com/Jitendex/MinimalJsonDiff/issues/1
+    /// </summary>
+    private static string SerializeDocument(JsonPatchDocument document)
+    {
+        var node = JsonSerializer.SerializeToNode(document);
+        if (node is not JsonArray array)
+        {
+            throw new Exception("Expected document to be an array");
+        }
+        foreach (var element in array)
+        {
+            if (element is not JsonObject obj)
+            {
+                throw new Exception("Expected all elements of document array to be objects");
+            }
+
+            // Since we're only using "Add", "Remove", "Replace", and "Test"
+            // operations, the "from" property is never necessary.
+            obj.Remove("from");
+
+            // For "Remove" operations, the "Value" property is never necessary.
+            if (!obj.TryGetPropertyValue("op", out var opNode))
+            {
+                continue;
+            }
+            if (opNode?.GetValue<string?>() is not string opValue)
+            {
+                continue;
+            }
+            if (string.Equals(opValue, "remove", StringComparison.Ordinal))
+            {
+                obj.Remove("value");
+            }
+        }
+        return JsonSerializer.Serialize(node);
     }
 }
