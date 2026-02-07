@@ -24,11 +24,6 @@ namespace Jitendex.MinimalJsonDiff;
 
 public static class JsonDiffer
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true
-    };
-
     public static string Diff<T>(T a, T b) where T : class
     {
         var nodeA = JsonSerializer.SerializeToNode(a);
