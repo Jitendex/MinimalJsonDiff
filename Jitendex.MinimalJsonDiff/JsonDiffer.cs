@@ -24,14 +24,14 @@ namespace Jitendex.MinimalJsonDiff;
 
 public static class JsonDiffer
 {
-    public static string Diff<T>(T a, T b) where T : class
+    public static string Diff<T>(T a, T b, JsonSerializerOptions? options = null) where T : class
     {
         var nodeA = JsonSerializer.SerializeToNode(a);
         var nodeB = JsonSerializer.SerializeToNode(b);
-        return Diff(nodeA, nodeB);
+        return Diff(nodeA, nodeB, options);
     }
 
-    public static string Diff(JsonNode? a, JsonNode? b)
+    public static string Diff(JsonNode? a, JsonNode? b, JsonSerializerOptions? options = null)
     {
         var document = new JsonPatchDocument();
         NodeDiff(a, b, document, path: string.Empty);
@@ -39,7 +39,7 @@ public static class JsonDiffer
         // JsonPatchDocument serialization is broken in .NET 10
         // return JsonSerializer.Serialize(document);
 
-        return SerializeDocument(document);
+        return SerializeDocument(document, options);
     }
 
     private static void NodeDiff(JsonNode? a, JsonNode? b, JsonPatchDocument document, string path)
@@ -136,7 +136,7 @@ public static class JsonDiffer
     /// This method can be removed when JsonPatchDocument serialization is fixed in the dotnet runtime.
     /// See https://github.com/Jitendex/MinimalJsonDiff/issues/1
     /// </summary>
-    private static string SerializeDocument(JsonPatchDocument document)
+    private static string SerializeDocument(JsonPatchDocument document, JsonSerializerOptions? options = null)
     {
         var node = JsonSerializer.SerializeToNode(document);
         if (node is not JsonArray array)
@@ -168,6 +168,9 @@ public static class JsonDiffer
                 obj.Remove("value");
             }
         }
-        return JsonSerializer.Serialize(node);
+
+        return options is null
+            ? JsonSerializer.Serialize(node)
+            : JsonSerializer.Serialize(node, options);
     }
 }
