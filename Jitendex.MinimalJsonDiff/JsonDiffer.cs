@@ -1,6 +1,6 @@
 ﻿/*
 JsonDiffer.cs
-Copyright (c) 2025 Stephen Kraus
+Copyright (c) 2025-2026 Stephen Kraus
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,7 @@ public static class JsonDiffer
         NodeDiff(a, b, document, path: string.Empty);
 
         // JsonPatchDocument serialization is broken in .NET 10
-        // return JsonSerializer.Serialize(document);
+        // return JsonSerializer.Serialize(document, options);
 
         return SerializeDocument(document, options);
     }
@@ -169,8 +169,6 @@ public static class JsonDiffer
             }
         }
 
-        return options is null
-            ? JsonSerializer.Serialize(node)
-            : JsonSerializer.Serialize(node, options);
+        return JsonSerializer.Serialize(node, options);
     }
 }
