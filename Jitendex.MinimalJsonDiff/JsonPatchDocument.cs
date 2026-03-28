@@ -25,34 +25,38 @@ internal sealed class JsonPatchDocument
     public string Serialize(JsonSerializerOptions? options)
         => JsonSerializer.Serialize(_document, options);
 
+    private const string Op = "op";
+    private const string Path = "path";
+    private const string Value = "value";
+
     public void Test(string path, JsonNode? value)
         => _document.Add(new JsonObject()
         {
-            ["op"] = "test",
-            ["path"] = path,
-            ["value"] = value,
+            [Op] = "test",
+            [Path] = path,
+            [Value] = value,
         });
 
     public void Add(string path, JsonNode? value)
         => _document.Add(new JsonObject()
         {
-            ["op"] = "add",
-            ["path"] = path,
-            ["value"] = value,
+            [Op] = "add",
+            [Path] = path,
+            [Value] = value,
         });
 
     public void Replace(string path, JsonNode? value)
         => _document.Add(new JsonObject()
         {
-            ["op"] = "replace",
-            ["path"] = path,
-            ["value"] = value,
+            [Op] = "replace",
+            [Path] = path,
+            [Value] = value,
         });
 
     public void Remove(string path)
         => _document.Add(new JsonObject()
         {
-            ["op"] = "remove",
-            ["path"] = path,
+            [Op] = "remove",
+            [Path] = path,
         });
 }
