@@ -22,7 +22,7 @@ internal sealed class JsonPatchDocument
 {
     private readonly JsonArray _document = [];
 
-    public string Serialize(JsonSerializerOptions? options = null)
+    public string Serialize(JsonSerializerOptions? options)
         => JsonSerializer.Serialize(_document, options);
 
     public void Test(string path, JsonNode? value)
