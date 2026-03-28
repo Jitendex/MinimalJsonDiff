@@ -24,8 +24,16 @@ public static class JsonDiffer
     {
         var nodeA = JsonSerializer.SerializeToNode(a);
         var nodeB = JsonSerializer.SerializeToNode(b);
+        return Diff(nodeA, nodeB, options);
+    }
+
+    /// <remarks>
+    /// Note that this method will mutate and effectively destroy the input JsonNodes.
+    /// </remarks>
+    public static string Diff(JsonNode? a, JsonNode? b, JsonSerializerOptions? options = null)
+    {
         var document = new JsonPatchDocument();
-        NodeDiff(nodeA, nodeB, document, path: string.Empty);
+        NodeDiff(a, b, document, path: string.Empty);
         return document.Serialize(options);
     }
 
