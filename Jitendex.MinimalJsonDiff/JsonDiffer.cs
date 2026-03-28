@@ -16,10 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using Microsoft.AspNetCore.JsonPatch.SystemTextJson;
-
 namespace Jitendex.MinimalJsonDiff;
 
 public static class JsonDiffer
@@ -28,18 +24,9 @@ public static class JsonDiffer
     {
         var nodeA = JsonSerializer.SerializeToNode(a);
         var nodeB = JsonSerializer.SerializeToNode(b);
-        return Diff(nodeA, nodeB, options);
-    }
-
-    public static string Diff(JsonNode? a, JsonNode? b, JsonSerializerOptions? options = null)
-    {
         var document = new JsonPatchDocument();
-        NodeDiff(a, b, document, path: string.Empty);
-
-        // JsonPatchDocument serialization is broken in .NET 10
-        // return JsonSerializer.Serialize(document, options);
-
-        return SerializeDocument(document, options);
+        NodeDiff(nodeA, nodeB, document, path: string.Empty);
+        return document.Serialize(options);
     }
 
     private static void NodeDiff(JsonNode? a, JsonNode? b, JsonPatchDocument document, string path)
@@ -63,10 +50,13 @@ public static class JsonDiffer
 
     private static void ObjectDiff(JsonObject a, JsonObject b, JsonPatchDocument document, string path)
     {
-        foreach (var (key, nodeA) in a)
+        var dictionaryA = JsonObjectToDictionary(a);
+        var dictionaryB = JsonObjectToDictionary(b);
+
+        foreach (var (key, nodeA) in dictionaryA)
         {
             var keyPath = path.Join(key);
-            if (b.TryGetPropertyValue(key, out var nodeB))
+            if (dictionaryB.TryGetValue(key, out var nodeB))
             {
                 NodeDiff(nodeA, nodeB, document, keyPath);
             }
@@ -77,13 +67,31 @@ public static class JsonDiffer
             }
         }
 
-        foreach (var (key, nodeB) in b)
+        foreach (var (key, nodeB) in dictionaryB)
         {
-            if (!a.ContainsKey(key))
+            if (!dictionaryA.ContainsKey(key))
             {
                 document.Add(path.Join(key), nodeB);
             }
         }
+    }
+
+    /// <summary>
+    /// Remove the nodes from the object to avoid the "node already has a parent"
+    /// error when moving a node to the patch document.
+    /// </summary>
+    private static Dictionary<string, JsonNode?> JsonObjectToDictionary(JsonObject obj)
+    {
+        var dictionary = new Dictionary<string, JsonNode?>(obj.Count);
+        foreach (var (key, node) in obj)
+        {
+            dictionary[key] = node;
+        }
+        foreach (var key in dictionary.Keys)
+        {
+            obj.Remove(key);
+        }
+        return dictionary;
     }
 
     private static void ArrayDiff(JsonArray a, JsonArray b, JsonPatchDocument document, string path)
@@ -93,21 +101,25 @@ public static class JsonDiffer
         {
             document.Test(path, a);
             document.Replace(path, b);
+            return;
         }
 
+        var arrayA = JsonArrayToNodeArray(a);
+        var arrayB = JsonArrayToNodeArray(b);
+
         // Arrays are equal length, or array B is larger.
-        else if (a.Count <= b.Count)
+        if (arrayA.Length <= arrayB.Length)
         {
-            for (int i = 0; i < b.Count; i++)
+            for (int i = 0; i < arrayB.Length; i++)
             {
                 var indexPath = path.Join(i);
-                if (i < a.Count)
+                if (i < arrayA.Length)
                 {
-                    NodeDiff(a[i], b[i], document, indexPath);
+                    NodeDiff(arrayA[i], arrayB[i], document, indexPath);
                 }
                 else
                 {
-                    document.Add(indexPath, b[i]);
+                    document.Add(indexPath, arrayB[i]);
                 }
             }
         }
@@ -116,16 +128,16 @@ public static class JsonDiffer
         else
         {
             // Loop backwards because Remove operations cause array lengths to shrink.
-            for (int i = a.Count - 1; i >= 0; i--)
+            for (int i = arrayA.Length - 1; i >= 0; i--)
             {
                 var indexPath = path.Join(i);
-                if (i < b.Count)
+                if (i < arrayB.Length)
                 {
-                    NodeDiff(a[i], b[i], document, indexPath);
+                    NodeDiff(arrayA[i], arrayB[i], document, indexPath);
                 }
                 else
                 {
-                    document.Test(indexPath, a[i]);
+                    document.Test(indexPath, arrayA[i]);
                     document.Remove(indexPath);
                 }
             }
@@ -133,42 +145,17 @@ public static class JsonDiffer
     }
 
     /// <summary>
-    /// This method can be removed when JsonPatchDocument serialization is fixed in the dotnet runtime.
-    /// See https://github.com/Jitendex/MinimalJsonDiff/issues/1
+    /// Remove the nodes from the array to avoid the "node already has a parent"
+    /// error when moving a node to the patch document.
     /// </summary>
-    private static string SerializeDocument(JsonPatchDocument document, JsonSerializerOptions? options = null)
+    private static JsonNode?[] JsonArrayToNodeArray(JsonArray arr)
     {
-        var node = JsonSerializer.SerializeToNode(document);
-        if (node is not JsonArray array)
+        var nodes = new JsonNode?[arr.Count];
+        for (int i = 0; i < arr.Count; i++)
         {
-            throw new Exception("Expected document to be an array");
+            nodes[i] = arr[i];
         }
-        foreach (var element in array)
-        {
-            if (element is not JsonObject obj)
-            {
-                throw new Exception("Expected all elements of document array to be objects");
-            }
-
-            // Since we're only using "Add", "Remove", "Replace", and "Test"
-            // operations, the "from" property is never necessary.
-            obj.Remove("from");
-
-            // For "Remove" operations, the "Value" property is never necessary.
-            if (!obj.TryGetPropertyValue("op", out var opNode))
-            {
-                continue;
-            }
-            if (opNode?.GetValue<string?>() is not string opValue)
-            {
-                continue;
-            }
-            if (string.Equals(opValue, "remove", StringComparison.Ordinal))
-            {
-                obj.Remove("value");
-            }
-        }
-
-        return JsonSerializer.Serialize(node, options);
+        arr.Clear();
+        return nodes;
     }
 }

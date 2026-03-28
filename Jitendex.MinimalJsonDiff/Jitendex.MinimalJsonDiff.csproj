@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.JsonPatch.SystemTextJson" Version="10.0.5" />
+    <Using Include="System.Text.Json"/>
+    <Using Include="System.Text.Json.Nodes"/>
   </ItemGroup>
 </Project>
