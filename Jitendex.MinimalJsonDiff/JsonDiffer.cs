@@ -27,6 +27,13 @@ public static class JsonDiffer
         return Diff(nodeA, nodeB, options);
     }
 
+    public static byte[] DiffToUtf8Bytes<T>(T a, T b, JsonSerializerOptions? options = null) where T : class
+    {
+        var nodeA = JsonSerializer.SerializeToNode(a);
+        var nodeB = JsonSerializer.SerializeToNode(b);
+        return DiffToUtf8Bytes(nodeA, nodeB, options);
+    }
+
     /// <remarks>
     /// Note that this method will mutate and effectively destroy the input JsonNodes.
     /// </remarks>
@@ -35,6 +42,16 @@ public static class JsonDiffer
         var document = new JsonPatchDocument();
         NodeDiff(a, b, document, path: string.Empty);
         return document.Serialize(options);
+    }
+
+    /// <remarks>
+    /// Note that this method will mutate and effectively destroy the input JsonNodes.
+    /// </remarks>
+    public static byte[] DiffToUtf8Bytes(JsonNode? a, JsonNode? b, JsonSerializerOptions? options = null)
+    {
+        var document = new JsonPatchDocument();
+        NodeDiff(a, b, document, path: string.Empty);
+        return document.SerializeToUtf8Bytes(options);
     }
 
     private static void NodeDiff(JsonNode? a, JsonNode? b, JsonPatchDocument document, string path)

@@ -25,6 +25,9 @@ internal sealed class JsonPatchDocument
     public string Serialize(JsonSerializerOptions? options)
         => JsonSerializer.Serialize(_document, options);
 
+    public byte[] SerializeToUtf8Bytes(JsonSerializerOptions? options)
+        => JsonSerializer.SerializeToUtf8Bytes(_document, options);
+
     private const string Op = "op";
     private const string Path = "path";
     private const string Value = "value";
