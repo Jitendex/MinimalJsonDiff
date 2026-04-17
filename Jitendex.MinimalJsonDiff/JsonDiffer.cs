@@ -1,4 +1,4 @@
-﻿/*
+/*
 JsonDiffer.cs
 Copyright (c) 2025-2026 Stephen Kraus
 SPDX-License-Identifier: Apache-2.0
