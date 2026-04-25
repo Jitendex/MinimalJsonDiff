@@ -34,6 +34,9 @@ public static class JsonDiffer
         return DiffToUtf8Bytes(nodeA, nodeB, options);
     }
 
+    /// <summary>
+    /// Create a JSON patch (RFC 6902) that produces node `b` when applied to node `a`.
+    /// </summary>
     /// <remarks>
     /// Note that this method will mutate and effectively destroy the input JsonNodes.
     /// </remarks>
@@ -44,6 +47,9 @@ public static class JsonDiffer
         return document.Serialize(options);
     }
 
+    /// <summary>
+    /// Create a JSON patch (RFC 6902) that produces node `b` when applied to node `a`.
+    /// </summary>
     /// <remarks>
     /// Note that this method will mutate and effectively destroy the input JsonNodes.
     /// </remarks>
